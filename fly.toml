@@ -1,0 +1,20 @@
+# fly.toml app configuration file generated for golang-clean-architecture on 2020-11-20T22:11:22+00:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'golang-clean-architecture'
+primary_region = 'syd'
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  size = 'shared-cpu-1x'

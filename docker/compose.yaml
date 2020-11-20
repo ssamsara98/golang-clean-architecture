@@ -1,0 +1,79 @@
+name: goca
+
+services:
+  postgres:
+    # container_name: postgres_14
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: golang_clean_architecture
+    ports:
+      - ${POSTGRES_PORT}:5432
+    networks:
+      - goca-net
+    volumes:
+      - goca-db:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'pg_isready -U postgres -d golang_clean_architecture'",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  adminer:
+    # container_name: adminer_4
+    image: adminer:4.8.1
+    restart: always
+    ports:
+      - ${ADMINER_PORT}:8080
+    networks:
+      - goca-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    # container_name: website
+    image: ssamsara98/golang-clean-architecture:dev
+    build:
+      context: ../
+      dockerfile: ./docker/web.Dockerfile
+    ports:
+      - ${PORT}:${PORT}
+      - ${DEBUG_PORT}:2345
+    networks:
+      - goca-net
+    volumes:
+      - ..:/app
+    security_opt:
+      - seccomp:unconfined
+    depends_on:
+      postgres:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    env_file: ../.env
+
+  nginx:
+    container_name: nginx_1
+    image: nginx:1.27-alpine
+    environment:
+      - NGINX_PORT=80
+    depends_on:
+      - web
+    ports:
+      - 8080:80
+      # - 8443:443
+    networks:
+      - goca-net
+    volumes:
+      - ../nginx:/etc/nginx:delegated
+
+networks:
+  goca-net:
+
+volumes:
+  goca-db:
